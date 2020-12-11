@@ -111,6 +111,138 @@ int fun_getattr( const char *path, struct stat *stateBuff ) {
 	else if (strcmp( path, fileName ) == 0){
 		stateBuff->st_mode = S_IFREG | 0644;
 		stateBuff->st_nlink = 1;
+#ifndef FUSE_USE_VERSION
+#define FUSE_USE_VERSION 30
+#endif
+#include <fuse.h> 		
+#include <stdio.h>				
+#include <sys/types.h>
+#include <time.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h> 
+#include <pwd.h>
+
+char *_fileName = "publish";
+char *fileName = "/mount;
+char *pathOfBashrc;
+
+char *getUsername() {
+	register struct passwd *pw;
+  	register uid_t uid;
+  	uid = geteuid();
+  	pw = getpwuid(uid);
+	return pw->pw_name;
+}
+
+char* getTheAlertText() {
+
+			FILE *stream;
+			char *line = NULL;
+			size_t len = 0;	
+			ssize_t nread;
+			int x = 0;
+			stream = fopen(pathOfBashrc, "r");
+			if (stream == NULL) 
+				return NULL;
+
+			while ((nread = getline(&line, &len, stream)) != -1) {
+	
+				if (strncmp("cowsay", line, strlen("cowsay")) == 0) {
+					x = 1;
+					break;
+				}
+			}
+
+			fclose(stream);
+			if (x == 0) {
+				return NULL;
+			} else {
+				int repace = strlen("cowsay -e \"o0\" ");
+				char *x = malloc(nread - repace + 1);
+				memcpy(x, line + repace, nread - repace);
+				memset(x + nread - repace, 0, 1);
+				free(line);
+				return x;
+			}
+			return line;
+}
+
+int getLengthOfTheAlertText() { 
+	char *j = getTheAlertText();
+	if (j == NULL) 
+		return 0;
+	int c = strlen(j);
+	free(j);
+	return c;
+}
+
+char* textToBinary(char* text) {
+    if(text == NULL) 
+        return 0;
+    size_t len = strlen(text);
+    char *binary = malloc(len*8 + 1);
+    binary[0] = '\0';
+    for(size_t i = 0; i < len; ++i) {
+        char ch = text[i];
+        for(int j = 7; j >= 0; --j) {
+            if(ch & (1 << j)) {
+                strcat(binary, "1");
+            } else {
+                strcat(binary, "0");
+            }
+        }
+    }
+ 
+    return binary;
+}
+
+void setTheAlertText(const char *x, size_t size) {	
+	FILE *stream;
+	char *buf; size_t lenOfChar;
+	stream = open_memstream(&buf, &lenOfChar);
+
+	FILE *file;
+	char *line = NULL;	
+	size_t len = 0;
+	ssize_t nread; 	
+	file = fopen(pathOfBashrc, "r");
+	if (file == NULL) 
+		 return;
+
+	size_t y = strlen("cowsay");
+	while (nread = getline(&line, &len, file) != -1) 
+		if (strncmp("cowsay", line, y) != 0) 
+			fprintf(stream, "%s", line);
+
+	fclose(file);
+	free(line);
+	if (size >= 3)
+		fprintf(stream, "cowsay -e \"o0\" %s", x);
+	fclose(stream);
+
+	file = fopen(pathOfBashrc, "w");
+	if (file == NULL) 
+		return;
+	fprintf(file, "%s", buf);
+	fclose(file);
+	free(buf);
+}
+
+int fun_getattr( const char *path, struct stat *stateBuff ) {
+		
+	stateBuff->st_uid = getuid();
+	stateBuff->st_gid = getgid();
+	stateBuff->st_atime = stateBuff->st_mtime = stateBuff->st_ctime = time(NULL);
+
+	if ( strcmp( path, "/" ) == 0 ) {
+		stateBuff->st_mode = S_IFDIR | 0755;
+		stateBuff->st_nlink = 2;
+	}
+	else if (strcmp( path, fileName ) == 0){
+		stateBuff->st_mode = S_IFREG | 0644;
+		stateBuff->st_nlink = 1;
 		stateBuff->st_size = getLengthOfTheAlertText();
 	} else 
 		return -ENOENT;
