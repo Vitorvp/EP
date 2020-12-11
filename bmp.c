@@ -8,6 +8,7 @@
 #define HEIGHT_OFFSET 0x0016
 #define BITS_PER_PIXEL_OFFSET 0x001C
 #define DATA 0x0002
+#define PIXEL 0x0043
 
 const int BYTES_PER_PIXEL = 3;
 const int FILE_HEADER_SIZE = 14;
@@ -42,11 +43,17 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
     int16 bitsPerPixel;
     fseek(bmp, BITS_PER_PIXEL_OFFSET, SEEK_SET);
     fread(&bitsPerPixel, 2, 1, bmp);
+    byte pixel;
+    fseek(bmp, PIXEL, SEEK_SET);
+    fread(&pixel, 3, 1, bmp);
+
     printf("\n Size: %d\n", data);
     printf(" Offset: %d\n", dataOffset);
     printf(" Header: %c\n", header);
     printf(" BitsPP: %d\n", bitsPerPixel);
-    printf(" Width: %d\n\n", *width);
+    printf(" Width: %d\n", *width);
+    printf(" Pixel: %d\n\n", pixel);
+
 
     int paddedRowSize = (int) (4 * ceil((float)(*width) / 4.0f))*(*bytesPerPixel);
     int unpaddedRowSize = (*width)*(*bytesPerPixel);
@@ -162,12 +169,70 @@ int gerarBMP() {
     printf("Image generated!!");
 }
 
+unsigned long binaryToDecimal(char *binary, int length) {
+    unsigned long decimal = 0;
+    unsigned long weight = 1;
+    binary += length - 1;
+ 
+    for(int i = 0; i < length; i++, binary--) {
+        if(*binary == '1') {
+            decimal += weight;
+        }
+        weight *= 2;
+    }
+    return decimal;
+}
+ 
+char* textToBinary(char* text) {
+    if(text == NULL) 
+        return 0;
+    size_t len = strlen(text);
+    char *binary = malloc(len*8 + 1);
+    binary[0] = '\0';
+    for(size_t i = 0; i < len; ++i) {
+        char ch = text[i];
+        for(int j = 7; j >= 0; --j) {
+            if(ch & (1 << j)) {
+                strcat(binary, "1");
+            } else {
+                strcat(binary, "0");
+            }
+        }
+    }
+ 
+    return binary;
+}
+ 
+void BinaryToText(char *binary, int binaryLength, char *text, int symbolCount) {
+    for(int i = 0; i < binaryLength; i+= 8, binary += 8) {
+        char *byte = binary;
+        byte[8] = '\0';
+        *text++ = binaryToDecimal(byte, 8);
+        // printf("Decimal: %ld\n", binaryToDecimal(byte, 8));
+    }
+    text -= symbolCount;
+}
+ 
 int main(void) {
     byte *pixels;
     int32 width;
     int32 height;
     int32 bytesPerPixel;
     read(&pixels, &width, &height, &bytesPerPixel);
-
+ 
+    char *bin = textToBinary("texto");
+    printf("Bin: %s\n", bin);
+ 
+    char *text;
+    int binaryLength, symbolCount;
+ 
+    binaryLength = strlen(bin);
+    symbolCount = binaryLength / 8 + 1;
+    text = malloc(symbolCount +1);
+    BinaryToText(bin, binaryLength, text, symbolCount);
+    printf("Text: %s\n", text);
+ 
     //gerarBMP();
+ 
+    return 0;
 }
