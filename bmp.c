@@ -102,7 +102,6 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
         //Recuperar msg
 
         sprintf(msg, "%d", pixel%2);
-        msgBit[i] = msg[i];
         printf("Msg: %s\n", msg);
     */
         end--;
