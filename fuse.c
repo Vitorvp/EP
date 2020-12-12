@@ -8,7 +8,7 @@
 
 static const char *filepath = "/tmp";
 static const char *filename = "tmp";
-static const char *filecontent = "I'm the content of the only file available there\n";
+static const char *filecontent = "Texto a ser escondido\n";
 
 static int getattr_callback(const char *path, struct stat *stbuf) {
   memset(stbuf, 0, sizeof(struct stat));
