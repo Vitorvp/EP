@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #define HEADER 0x0000
 #define DATA_OFFSET_OFFSET 0x000A
@@ -8,7 +9,7 @@
 #define HEIGHT_OFFSET 0x0016
 #define BITS_PER_PIXEL_OFFSET 0x001C
 #define DATA 0x0002
-#define PIXEL 0x0043
+#define PIXEL 0x0036
 
 const int BYTES_PER_PIXEL = 3;
 const int FILE_HEADER_SIZE = 14;
@@ -17,6 +18,8 @@ const int INFO_HEADER_SIZE = 40;
 void generateBitmapImage(unsigned char* image, int height, int width, char* imageFileName);
 unsigned char* createBitmapFileHeader(int height, int stride);
 unsigned char* createBitmapInfoHeader(int height, int width);
+unsigned long binaryToDecimal(char *binary, int length);
+char* textToBinary(char* text);
 
 
 typedef unsigned int int32;
@@ -26,12 +29,17 @@ typedef unsigned char byte;
 int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
 
     FILE *bmp;
-    bmp = fopen("bitmapImage.bmp", "rb");
+    bmp = fopen("bitmapImage.bmp", "r+");
     byte header;
     fseek(bmp, HEADER, SEEK_SET);
     fread(&header, 2, 1, bmp);
-    int32 data;
+    byte pixel;
+    fseek(bmp, PIXEL, SEEK_SET);
+    fread(&pixel, 3, 1, bmp);
+    // pixel = 50;
+    // fwrite(&pixel, 3, 1, bmp);
     fseek(bmp, DATA, SEEK_SET);
+    int32 data;
     fread(&data, 4, 1, bmp);
     int32 dataOffset;
     fseek(bmp, DATA_OFFSET_OFFSET, SEEK_SET);
@@ -43,29 +51,79 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
     int16 bitsPerPixel;
     fseek(bmp, BITS_PER_PIXEL_OFFSET, SEEK_SET);
     fread(&bitsPerPixel, 2, 1, bmp);
-    byte pixel;
-    fseek(bmp, PIXEL, SEEK_SET);
-    fread(&pixel, 3, 1, bmp);
-
     printf("\n Size: %d\n", data);
     printf(" Offset: %d\n", dataOffset);
+    printf(" Disp.: %d\n", data - dataOffset);
     printf(" Header: %c\n", header);
     printf(" BitsPP: %d\n", bitsPerPixel);
     printf(" Width: %d\n", *width);
     printf(" Pixel: %d\n\n", pixel);
 
-
     int paddedRowSize = (int) (4 * ceil((float)(*width) / 4.0f))*(*bytesPerPixel);
+    printf("pad: %d\n", paddedRowSize);
     int unpaddedRowSize = (*width)*(*bytesPerPixel);
     int totalSize = unpaddedRowSize*(*height);
     *pixels = (byte*)malloc(totalSize);
     int i = 0;
     byte *currentRowPointer = *pixels+((*height-1)*unpaddedRowSize);
-    for(i = 0; i < *height; i++) {
-        fseek(bmp, dataOffset+(i*paddedRowSize), SEEK_SET);
-        fread(currentRowPointer, 1, unpaddedRowSize, bmp);
-        currentRowPointer -= unpaddedRowSize;
+    printf("Pix0: %d\n", *currentRowPointer);
+
+    // for(i = 0; i < *width * *height + 8; i++) {
+    //         fseek(bmp, dataOffset+(i), SEEK_SET);
+    //     fread(currentRowPointer, 1, unpaddedRowSize, bmp);
+    //     // printf("Pix: %d\n", *currentRowPointer);
+    //     currentRowPointer -= unpaddedRowSize;
+    //     printf("Pix2: %d\n", *pixels[dataOffset+(i)]);
+    //     *pixels += 10;
+    //     fwrite(&pixels[dataOffset+(i)], 1, paddedRowSize, bmp);
+    // }
+
+    char *text = "Alguma coisa";
+    char *textBin = textToBinary(text);
+    printf("textBin: %s\n", textBin);
+
+    int textLength = strlen(textBin);
+    int end = textLength;
+    int disponivel = data - dataOffset;
+
+    char msg[100];
+
+    if(textLength < disponivel) {
+        while(end != 0) {
+        fseek(bmp, PIXEL+i, SEEK_SET);
+        fread(&pixel, 3, 1, bmp);
+        printf("Pixel[%d]: %d\n", i, pixel);
+
+        pixel += textBin[i] - '0';
+        printf("Pixel2[%d]: %d\n", i, pixel);
+        fwrite(&pixel, 3, 1, bmp);
+
+    /*
+        //Recuperar msg
+
+        sprintf(msg, "%d", pixel%2);
+        msgBit[i] = msg[i];
+        printf("Msg: %s\n", msg);
+    */
+        end--;
+        i++;
+        }
     }
+    
+    
+
+    // for(i = 0; i < *width * *height * 3 + 24; i++) {
+    //     fseek(bmp, PIXEL+i, SEEK_SET);
+    //     fread(&pixel, 3, 1, bmp);
+    //     printf("Pixel[%d]: %d\n", i, pixel);
+    //     pixel += 50;
+    //     printf("Pixel2[%d]: %d\n", i, pixel);
+    //     fwrite(&pixel, 3, 1, bmp);
+    // }
+
+    // pixel += 250;
+    // fwrite(&pixel, 1, paddedRowSize, bmp);
+
     fclose(bmp);
 
     return 0;
@@ -159,9 +217,9 @@ int gerarBMP() {
     int i, j;
     for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
-            image[i][j][2] = (unsigned char) ( i * 0 / height );             //red
+            image[i][j][2] = (unsigned char) ( i * 150 / height );             //red
             image[i][j][1] = (unsigned char) ( j * 255 / width );              //green
-            image[i][j][0] = (unsigned char) ( (i+j) * 0 / (height+width) ); //blue
+            image[i][j][0] = (unsigned char) ( (i+j) * 100 / (height+width) ); //blue
         }
     }
 
@@ -173,7 +231,7 @@ unsigned long binaryToDecimal(char *binary, int length) {
     unsigned long decimal = 0;
     unsigned long weight = 1;
     binary += length - 1;
- 
+
     for(int i = 0; i < length; i++, binary--) {
         if(*binary == '1') {
             decimal += weight;
@@ -182,7 +240,7 @@ unsigned long binaryToDecimal(char *binary, int length) {
     }
     return decimal;
 }
- 
+
 char* textToBinary(char* text) {
     if(text == NULL) 
         return 0;
@@ -199,10 +257,10 @@ char* textToBinary(char* text) {
             }
         }
     }
- 
+
     return binary;
 }
- 
+
 void BinaryToText(char *binary, int binaryLength, char *text, int symbolCount) {
     for(int i = 0; i < binaryLength; i+= 8, binary += 8) {
         char *byte = binary;
@@ -212,27 +270,59 @@ void BinaryToText(char *binary, int binaryLength, char *text, int symbolCount) {
     }
     text -= symbolCount;
 }
- 
+
+int BinaryToInt(const char *s) {
+    // return (int) strtol(s, NULL, 2);
+    int bLen =  strlen(s);
+    char input[bLen + 1];
+    input[bLen+1] = '\0';
+    int c, i = 0;
+    for(i; i < bLen; i++) {
+        if((c = s[i]) != EOF && '\n' != c ){
+            input[i] = (char)c;
+        } else {
+            break;
+        }
+    }
+
+    int result = 0;
+
+    for(int j = 0; j < i; j++) {
+        result <<= 1;
+        if(input[j] == '1'){
+            result |= 1;
+        }
+    }
+
+    printf("Bin: %s -> Int: %d\n", s, result);
+
+    return 0;
+}
+
 int main(void) {
     byte *pixels;
     int32 width;
     int32 height;
     int32 bytesPerPixel;
     read(&pixels, &width, &height, &bytesPerPixel);
- 
+
     char *bin = textToBinary("texto");
     printf("Bin: %s\n", bin);
- 
+
     char *text;
     int binaryLength, symbolCount;
- 
+
     binaryLength = strlen(bin);
     symbolCount = binaryLength / 8 + 1;
     text = malloc(symbolCount +1);
     BinaryToText(bin, binaryLength, text, symbolCount);
     printf("Text: %s\n", text);
- 
-    //gerarBMP();
- 
+
+    BinaryToInt(bin);
+    printf("Num: %d \n", bin[1] - '0');
+
+    // gerarBMP();
+
     return 0;
 }
+
