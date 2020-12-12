@@ -94,7 +94,7 @@ static struct fuse_operations fuse_example_operations = {
 
 int main(int argc, char *argv[])
 {
-  //Compile: gcc fuse-example.c -o FUSE `pkg-config fuse --cflags --libs`
+  //Compile: gcc fuse.c -o FUSE `pkg-config fuse --cflags --libs`
   //Execute: ./FUSE -f <nome_da_pasta>
 	
   return fuse_main(argc, argv, &fuse_example_operations, NULL);
