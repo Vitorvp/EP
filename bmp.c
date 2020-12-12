@@ -36,8 +36,6 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
     byte pixel;
     fseek(bmp, PIXEL, SEEK_SET);
     fread(&pixel, 3, 1, bmp);
-    // pixel = 50;
-    // fwrite(&pixel, 3, 1, bmp);
     fseek(bmp, DATA, SEEK_SET);
     int32 data;
     fread(&data, 4, 1, bmp);
@@ -68,16 +66,6 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
     byte *currentRowPointer = *pixels+((*height-1)*unpaddedRowSize);
     printf("Pix0: %d\n", *currentRowPointer);
 
-    // for(i = 0; i < *width * *height + 8; i++) {
-    //         fseek(bmp, dataOffset+(i), SEEK_SET);
-    //     fread(currentRowPointer, 1, unpaddedRowSize, bmp);
-    //     // printf("Pix: %d\n", *currentRowPointer);
-    //     currentRowPointer -= unpaddedRowSize;
-    //     printf("Pix2: %d\n", *pixels[dataOffset+(i)]);
-    //     *pixels += 10;
-    //     fwrite(&pixels[dataOffset+(i)], 1, paddedRowSize, bmp);
-    // }
-
     char *text = "Alguma coisa";
     char *textBin = textToBinary(text);
     printf("textBin: %s\n", textBin);
@@ -86,7 +74,7 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
     int end = textLength;
     int disponivel = data - dataOffset;
 
-    char msg[100];
+    char msg[textLength + 5];
 
     if(textLength < disponivel) {
         while(end != 0) {
@@ -94,9 +82,11 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
         fread(&pixel, 3, 1, bmp);
         printf("Pixel[%d]: %d\n", i, pixel);
 
-        pixel += textBin[i] - '0';
-        printf("Pixel2[%d]: %d\n", i, pixel);
-        fwrite(&pixel, 3, 1, bmp);
+        if(pixel%2 == 0) {
+            pixel += textBin[i] - '0';
+            printf("Pixel2[%d]: %d\n", i, pixel);
+            fwrite(&pixel, 3, 1, bmp);
+        }
 
     /*
         //Recuperar msg
@@ -108,20 +98,6 @@ int read(byte **pixels, int32 *width, int32 *height, int32 *bytesPerPixel) {
         i++;
         }
     }
-    
-    
-
-    // for(i = 0; i < *width * *height * 3 + 24; i++) {
-    //     fseek(bmp, PIXEL+i, SEEK_SET);
-    //     fread(&pixel, 3, 1, bmp);
-    //     printf("Pixel[%d]: %d\n", i, pixel);
-    //     pixel += 50;
-    //     printf("Pixel2[%d]: %d\n", i, pixel);
-    //     fwrite(&pixel, 3, 1, bmp);
-    // }
-
-    // pixel += 250;
-    // fwrite(&pixel, 1, paddedRowSize, bmp);
 
     fclose(bmp);
 
